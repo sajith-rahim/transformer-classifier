@@ -1,2 +1,2 @@
 from .config import *
-from .mnist_config import *
+from .clf_config import *
