@@ -1,4 +1,4 @@
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 import numpy as np
 import torch
 
@@ -16,6 +16,7 @@ class BaseDataset(Dataset):
     y: torch.Tensor
 
     def __init__(self, data: np.ndarray, targets: np.ndarray):
+        super(BaseDataset, self).__init__()
         if len(data) != len(targets):
             raise ValueError(
                 "data and targets must be the same length. "
