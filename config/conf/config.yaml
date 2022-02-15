@@ -1,17 +1,24 @@
 defaults:
-  - files: mnist
+  - files: agnews
   - _self_
 paths:
   log: ${hydra:runtime.cwd}/logs
-  data: ${hydra:runtime.cwd}/data/raw
+  data: ${hydra:runtime.cwd}/data
 params:
-  epoch_count: 20
+  epoch_count: 200
   lr: 5e-5
   batch_size: 128
   shuffle: True
   num_workers: 2
+  query_limit: 200 # q_len
+  emb_size: 256 # embedding size i.e dim
+  n_heads: 8  # number of attention heads
+  n_encoders: 2  # number of encoder layers
+  ffn_hidden_size: 512  # size of position-wise feed forward network
+  classifier_hidden_layer_size: 2048
+  dropout: 0.3
 checkpoint:
-  save_interval: 5
+  save_interval: 10
   resume: False
-  checkpoint_id: MnistModel-14_01_2022_00_14_27-10-0.90.pt.zip
+  checkpoint_id: TransformerClassifier-10_02_2022_23_43_34-20-0.95.pt.zip
   path: ${hydra:runtime.cwd}/checkpoints
