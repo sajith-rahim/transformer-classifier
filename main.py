@@ -6,25 +6,25 @@ import torch
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
 
-from config import MNISTConfig
-from dataloader.mnist_dataloader import MnistDataLoader
-from models import MnistModel
+from config import ClfConfig
+from dataloader.sentence_dataloader import SentenceDataLoader, build_vocab
+from models import TransformerClassifier
+
 from store import Checkpointer
 from task_runner.task_runner import TaskRunner
 from tracker import TensorboardExperiment, Phase
-
-# 1. initialize config store
 from utils import merge_config, get_device
 
+# 1. initialize config store
 cs = ConfigStore.instance()
 
 # 2. load project config schema
-cs.store(name="mnist_config", node=MNISTConfig)
+cs.store(name="clf_config", node=ClfConfig)
 
 
 # 3. set path and filename
 @hydra.main(config_path="config/conf", config_name="config")
-def run(config: MNISTConfig) -> None:
+def run(config: ClfConfig) -> None:
     # overwrite with cli params
     print(OmegaConf.from_cli())
     config = merge_config(config, OmegaConf.from_cli())
@@ -35,7 +35,7 @@ def run(config: MNISTConfig) -> None:
 
     # 4. define data-loaders
 
-    data_loader = MnistDataLoader(
+    data_loader = SentenceDataLoader(
         config.params.batch_size,
         config.params.shuffle,
         config.params.num_workers
@@ -52,10 +52,23 @@ def run(config: MNISTConfig) -> None:
         label_file=config.files.train_labels,
     )
 
+    embeddings, emb_size, word_map, n_classes, vocab_size = build_vocab(config.paths.data, config.params.emb_size,
+                                                                        False)
+
     # 5. define model
-    model = MnistModel().to(get_device())
+    model_kwargs = {
+        'dim': emb_size,
+        'q_len': config.params.query_limit,
+        'ffn_hidden_layer_size': config.params.ffn_hidden_size,
+        'n_heads': config.params.n_heads,
+        'n_encoder': config.params.n_encoders,
+        'classfifier_hidden_layer_size': config.params.classifier_hidden_layer_size,
+        'dropout': config.params.dropout
+    }
+    model = TransformerClassifier(n_classes, vocab_size, embeddings, **model_kwargs).to(get_device())
     print(model.__str__())
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.params.lr)
+
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config.params.lr)
     loss_fn = torch.nn.CrossEntropyLoss(reduction="mean")
 
     # TODO - Refactor
@@ -70,7 +83,7 @@ def run(config: MNISTConfig) -> None:
     # 7. define tracker and set log dir
     tracker = TensorboardExperiment(log_path=config.paths.log)
 
-    tracker.add_graph(model, iter(test_runner.dataloader).next()[0])
+    # tracker.add_graph(model, iter(test_runner.dataloader).next()[0])
 
     # 8. train
     for epoch_id in range(config.params.epoch_count):
@@ -106,6 +119,7 @@ def run(config: MNISTConfig) -> None:
 
         # flush the tracker after every epoch for live updates
         tracker.flush()
+
 
 
 if __name__ == "__main__":
