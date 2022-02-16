@@ -1,1 +1,1 @@
-from .mnist import *
+from .sentence_dataset import SentenceDataset
