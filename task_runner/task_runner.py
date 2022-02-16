@@ -43,10 +43,12 @@ class TaskRunner:
     def run(self, desc: str, experiment: ExperimentTracker):
         self.model.train(self.phase is Phase.TRAIN)
         device = get_device()
-        for x, y in tqdm(self.dataloader, desc=desc, ncols=120):
-            x = x.to(device)
-            y = y.to(device)
-            loss, batch_accuracy = self._run_single_batch(x, y)
+        for sentences, _ , labels in tqdm(self.dataloader, desc=desc, ncols=120):
+
+            sentences = sentences.to(device)  # (batch_size, q_len)
+            labels = labels.squeeze(1).to(device)  # (batch_size)
+
+            loss, batch_accuracy = self._run_single_batch(sentences, labels)
             experiment.add_batch_metric("accuracy", batch_accuracy, self.run_count)
 
             if self.optimizer:
@@ -61,8 +63,8 @@ class TaskRunner:
         loss = self.loss_fn(prediction, y)
 
         # Compute Batch Validation Metrics
-        y_np = y.detach().numpy()
-        y_prediction_np = np.argmax(prediction.detach().numpy(), axis=1)
+        y_np = y.cpu().detach().numpy()
+        y_prediction_np = np.argmax(prediction.cpu().detach().numpy(), axis=1)
         batch_accuracy: float = accuracy_score(y_np, y_prediction_np)
         self.accuracy_metric.update(batch_accuracy, batch_size)
 
