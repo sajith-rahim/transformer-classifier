@@ -1,18 +1,7 @@
 
-████████████████████████████████████████████
-█▄─▄▄─██▀▄─██▄─▄▄─█▄─█─▄█▄─▄▄▀█▄─██─▄█─▄▄▄▄█
-██─▄▄▄██─▀─███─▄▄▄██▄─▄███─▄─▄██─██─██▄▄▄▄─█
-▀▄▄▄▀▀▀▄▄▀▄▄▀▄▄▄▀▀▀▀▄▄▄▀▀▄▄▀▄▄▀▀▄▄▄▄▀▀▄▄▄▄▄▀
 
 
-*Generic template to bootstrap your PyTorch project.*
-
-* Defines a generic folder structure
-* Configuration based 
-* Command line option support to overide loaded config file
-* Tensorboard Support
-* Checkpointing and Resume
-<p><img src="https://visitor-badge.deta.dev/badge?page_id=sajith-rahim.papyrus&left_color=red&right_color=green"></img></p>
+*A Transformer Classifier implemented from Scratch.*
 
 <p>
 <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=PyTorch&logoColor=white" />
@@ -21,6 +10,10 @@
 <img src="https://img.shields.io/badge/Numpy-777BB4?style=for-the-badge&logo=numpy&logoColor=white" />
 <img src="https://img.shields.io/badge/Shell_Script-121011?style=for-the-badge&logo=gnu-bash&logoColor=white" />
 </p>
+
+### Paper
+
+<a href="https://papers.nips.cc/paper/7181-attention-is-all-you-need.pdf" target="_blank">Attention Is All You Need. Ashish Vaswani, et al. NIPS 2017</a>.
 
 ## Getting Started
 
@@ -37,10 +30,19 @@
 | matplotlib|3.4.1 |
 | requests|2.22.0 |
 | hydra_core| 1.1.1 |
-| dataclasses| 0.8 |
+| dataclasses| 0.6 |
 | numpy| 1.18.5 |
 | tqdm| 4.62.3 |
+| nltk| 3.7 |
 
+Note: Additional requirements are from *papyrus*.
+```powershell
+─────────────╔═╗
+╔═╦═╗╔═╦╦╦╦╦╦╣═╣
+║╬║╬╚╣╬║║║╔╣║╠═║
+║╔╩══╣╔╬╗╠╝╚═╩═╝
+╚╝───╚╝╚═╝
+```
 
 ### Installing
 
@@ -48,23 +50,46 @@
 pip install -r requirements.txt
 ```
 
+### Inference
+```powershell
+python infer.py
+```
+#### Output
+```powershell
+FC Barcelona finally accepts it has turned into shit.
+Category: Sports, Probability: 96.03%
+```
+
 
 
 ### Download scripts
 
-Example: MNIST
 
-Run `down_mnist.sh` to download using curl
+Example: AG's News Topic Classification Dataset
 
-OR 
+The AG's news topic classification dataset is constructed by choosing 4 largest classes from the original corpus. Each class contains 30,000 training samples and 1,900 testing samples. The total number of training samples is 120,000 and testing 7,600.
 
-Programaticaly download using 
+Origin:  <a href="http://www.di.unipi.it/~gulli/AG_corpus_of_news_articles.html" target="_blank">AG Corpus</a>.
+
 ```powershell
-utils.download_utils.FileDownloader
+Classes:
+  >  World
+  >  Sports
+  >  Business
+  >  Sci/Tech
+```
+```powershell
+wget https://data.deepai.org/agnews.zip
+```
+or
+
+Use downloader:
+```powershell
+downloader = FileDownloader()
+downloader.download_file(url, filename=None, target_dir="./data/raw")
 ```
 
-
-## Running 
+## Training 
 
 From the root directory run
 
@@ -77,30 +102,103 @@ python main.py
 
 ```powershell
 files:
-  test_data: t10k-images-idx3-ubyte.gz
-  test_labels: t10k-labels-idx1-ubyte.gz
-  train_data: train-images-idx3-ubyte.gz
-  train_labels: train-labels-idx1-ubyte.gz
+  test_data: test_data.pth.tar
+  test_labels: None
+  train_data: train_data.pth.tar
+  train_labels: None
 paths:
-  log: <RESOLVED_DIR_PATH>/logs
-  data: <RESOLVED_DIR_PATH>/data/raw
+  log: /content/tformer-clf/logs
+  data: /content/tformer-clf/data
 params:
-  epoch_count: 20
+  epoch_count: 200
   lr: 5.0e-05
   batch_size: 128
   shuffle: true
   num_workers: 2
+  query_limit: 200
+  emb_size: 256
+  n_heads: 8
+  n_encoders: 2
+  ffn_hidden_size: 512
+  classifier_hidden_layer_size: 2048
+  dropout: 0.3
+checkpoint:
+  save_interval: 10
+  resume: false
+  checkpoint_id: TransformerClassifier-10_02_2022_23_43_34-20-0.95.pt.zip
+  path: /content/tformer-clf/checkpoints
 
-Active device: cpu
-MnistModel(
-  (conv1): Conv2d(1, 10, kernel_size=(5, 5), stride=(1, 1))
-  (conv2): Conv2d(10, 20, kernel_size=(5, 5), stride=(1, 1))
-  (conv2_drop): Dropout2d(p=0.5, inplace=False)
-  (fc1): Linear(in_features=320, out_features=50, bias=True)
-  (fc2): Linear(in_features=50, out_features=10, bias=True)
+Active device: cuda
+TransformerClassifier(
+  (embeddings): Embedding(31994, 256)
+  (postional_encoding): PositionalEncoding(
+    (dropout): Dropout(p=0.3, inplace=False)
+  )
+  (encoder): TransformerEncoderBlock(
+    (attn): MultiHeadScaledDotProductAttention(
+      (W_q): Linear(in_features=256, out_features=256, bias=True)
+      (W_k): Linear(in_features=256, out_features=256, bias=True)
+      (W_v): Linear(in_features=256, out_features=256, bias=True)
+      (dropout): Dropout(p=0.3, inplace=False)
+      (softmax): Softmax(dim=-1)
+      (layer_norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (fc): Linear(in_features=256, out_features=256, bias=True)
+      (dropout2): Dropout(p=0.3, inplace=False)
+    )
+    (feed_forward): PositionWiseFFN(
+      (W_1): Linear(in_features=256, out_features=512, bias=True)
+      (W_2): Linear(in_features=512, out_features=256, bias=True)
+      (layer_norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (dropout): Dropout(p=0.3, inplace=False)
+      (relu): ReLU()
+    )
+  )
+  (encoders): ModuleList(
+    (0): TransformerEncoderBlock(
+      (attn): MultiHeadScaledDotProductAttention(
+        (W_q): Linear(in_features=256, out_features=256, bias=True)
+        (W_k): Linear(in_features=256, out_features=256, bias=True)
+        (W_v): Linear(in_features=256, out_features=256, bias=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (softmax): Softmax(dim=-1)
+        (layer_norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (fc): Linear(in_features=256, out_features=256, bias=True)
+        (dropout2): Dropout(p=0.3, inplace=False)
+      )
+      (feed_forward): PositionWiseFFN(
+        (W_1): Linear(in_features=256, out_features=512, bias=True)
+        (W_2): Linear(in_features=512, out_features=256, bias=True)
+        (layer_norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (relu): ReLU()
+      )
+    )
+    (1): TransformerEncoderBlock(
+      (attn): MultiHeadScaledDotProductAttention(
+        (W_q): Linear(in_features=256, out_features=256, bias=True)
+        (W_k): Linear(in_features=256, out_features=256, bias=True)
+        (W_v): Linear(in_features=256, out_features=256, bias=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (softmax): Softmax(dim=-1)
+        (layer_norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (fc): Linear(in_features=256, out_features=256, bias=True)
+        (dropout2): Dropout(p=0.3, inplace=False)
+      )
+      (feed_forward): PositionWiseFFN(
+        (W_1): Linear(in_features=256, out_features=512, bias=True)
+        (W_2): Linear(in_features=512, out_features=256, bias=True)
+        (layer_norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (relu): ReLU()
+      )
+    )
+  )
+  (fc): Linear(in_features=51200, out_features=2048, bias=True)
+  (fc2): Linear(in_features=2048, out_features=4, bias=True)
 )
-Trainable parameters: 21840
-Train Progress:  64%|█████████████████████████████████████████▋                       | 301/469 [00:15<00:08, 19.13it/s]
+Trainable parameters: 114639620
+
+Train Progress:   5%|███                                                               | 44/938 [00:19<06:39,  2.24it/s]
 ```
 
 To override params from CLI:
@@ -114,24 +212,6 @@ To override params from CLI if exists else add:
 ```powershell
 python main.py ++params.other_params=abc
 ```
-
-
-#### For grouping configs for experiments:
-<div style='page-break-after: always'></div>
-
-
-```
-├─ files
-│  ├─ mnist.yaml
-│  └─ fmnist.yaml
-└── config.yaml
-```
-
-```powershell
-    python main.py +files=fmnist
-```
-*You can find more info about grouping* <a href="https://hydra.cc/docs/tutorials/basic/your_first_app/config_groups/" target="_blank">here</a>
-
 
 ## Checkpointing
 
@@ -179,111 +259,91 @@ tensorboard server will open at
 
     http://localhost:6006
 
-
-## Spawn a new Project
-
-
-```powershell
-python spawn.py ../new-project
-```
-```powershell
-─────────────╔═╗
-╔═╦═╗╔═╦╦╦╦╦╦╣═╣
-║╬║╬╚╣╬║║║╔╣║╠═║
-║╔╩══╣╔╬╗╠╝╚═╩═╝
-╚╝───╚╝╚═╝
-
-New project initialized at <PATH>\new-project
-```
-
 # Folder Structure
 
 ```powershell
 |   down_mnist.sh
-|   LICENSE
+|   infer.py
 |   main.py
 |   note.txt
 |   README.md
 |   requirements.txt
-|   spawn.py
+|
 +---base
-|   |   base_dataloader.py
-|   |   base_dataset.py
-|   |   base_model.py
-|   |   __init__.py
+|       base_dataloader.py
+|       base_dataset.py
+|       base_model.py
+|       __init__.py
 |
 +---config
+|   |   clf_config.py
 |   |   config.py
-|   |   mnist_config.py
 |   |   __init__.py
 |   |
-|   +---conf
-|   |   |   config.yaml
-|   |   |
-|   |   \---files
-|   |           mnist.yaml
+|   \---conf
+|       |   config.yaml
+|       |
+|       \---files
+|               agnews.yaml
 |
 +---data
-|   \---raw
-|           t10k-images-idx3-ubyte.gz
-|           t10k-labels-idx1-ubyte.gz
-|           train-images-idx3-ubyte.gz
-|           train-labels-idx1-ubyte.gz
+|       test_data.pth.tar
+|       train_data.pth.tar
+|       word_map.json
 |
 +---dataloader
-|   |   mnist_dataloader.py
+|   |   sentence_dataloader.py
 |   |   __init__.py
 |   |
-|   +---dataset
-|   |   |   mnist.py
-|   |   |   __init__.py
+|   \---dataset
+|           sentence_dataset.py
+|           __init__.py
 |
 +---logs
 |   +---0
-|   |       events.out.tfevents.1641064646.Drovahkin.7748.0
-|
+|   |       events.out.tfevents.1644523642.Drovahkin.12564.0
+|   
 +---metrics
-|   |   losses.py
-|   |   metric.py
-|   |   __init__.py
+|       losses.py
+|       metric.py
+|       __init__.py
 |
 +---models
-|   |   mnist_model.py
+|   |   transformer.py
 |   |   __init__.py
+|   |
+|   \---blocks
+|           attention.py
+|           encoder_block.py
+|           positional_encoding.py
+|           pos_wise_ffn.py
+|           __init__.py
+|
++---outputs
++---store
+|       checkpointer.py
+|       runtime_kvstore.py
+|       __init__.py
 |
 +---task_runner
-|   |   task_runner.py
-|   |   __init__.py
+|       task_runner.py
+|       __init__.py
 |
 +---tracker
-|   |   phase.py
-|   |   tensorboard_experiment.py
-|   |   track.py
-|   |   __init__.py
-|   
+|       phase.py
+|       tensorboard_experiment.py
+|       track.py
+|       __init__.py
 |
 \---utils
-    |   config_utils.py
-    |   data_utils.py
-    |   device_utils.py
-    |   download_utils.py
-    |   os_utils.py
-    |   tracker_utils.py
-    |   __init__.py
+        config_utils.py
+        data_utils.py
+        device_utils.py
+        download_utils.py
+        os_utils.py
+        tracker_utils.py
+        __init__.py
 ```
-
-
-
-## Deployment
-
- 🚧 🅆🄾🅁🄺 🄸🄽 🄿🅁🄾🄶🅁🄴🅂🅂
-    
-## Contributing
-
-Feel free to fork.
-
-Do ⭐ if you found this useful. 😊 
-
 ## License
 
     MIT
@@ -292,12 +352,8 @@ Do ⭐ if you found this useful. 😊
 
 <img align="right" style="float:right;border:3px solid black" width=64 height=92 src="https://raw.githubusercontent.com/sajith-rahim/cdn/main/content/blog/media/warn_tag.png" />
 
- * ~~Resume and Checkpointing~~
- * LR Scheduler
- * Gradient tracker
- * Add WANDB support
- * UI
+ * Support pre trained word embeddings.
 
 ## Acknowledgments
 
-  Inspired from <a href="https://github.com/victoresque/pytorch-template" target="_blank">victoresque</a>'s pytorch template project.
+Tensor2Tensor <a href="https://github.com/tensorflow/tensor2tensor/blob/master/tensor2tensor/models/transformer.py" target="_blank">transformer.py</a>
