@@ -51,6 +51,17 @@ pip install -r requirements.txt
 ```
 
 ### Inference
+
+#### Weight File:
+| Checkpoint     | Size      |
+|:----------------|:---------------|
+| <a href="https://link.ap1.storjshare.io/jwgyugkgopbha4jri4u2giijajda/transformer-classifier%2FTransformerClassifier-10_02_2022_23_43_34-20-0.95.pt.zip" target="_blank">TransformerClassifier.95.pt.zip</a> | 1.28 GB (1371499203 bytes) |
+
+
+Run:
+
+
+
 ```powershell
 python infer.py
 ```
