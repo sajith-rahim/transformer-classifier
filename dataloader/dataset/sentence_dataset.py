@@ -5,7 +5,7 @@ import torch
 
 
 
-class SentenceDataset(Dataset):
+class SentenceDataset(BaseDataset):
 
     def __init__(self, data):
         self.data = data
@@ -13,7 +13,6 @@ class SentenceDataset(Dataset):
 
     def __getitem__(self, i: int):
         return torch.LongTensor(self.data['sents'][i]), \
-               torch.LongTensor([self.data['words_per_sentence'][i]]), \
                torch.LongTensor([self.data['labels'][i]])
 
     def __len__(self) -> int:
