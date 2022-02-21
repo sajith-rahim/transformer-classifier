@@ -43,7 +43,7 @@ class TaskRunner:
     def run(self, desc: str, experiment: ExperimentTracker):
         self.model.train(self.phase is Phase.TRAIN)
         device = get_device()
-        for sentences, _ , labels in tqdm(self.dataloader, desc=desc, ncols=120):
+        for sentences, labels in tqdm(self.dataloader, desc=desc, ncols=120):
 
             sentences = sentences.to(device)  # (batch_size, q_len)
             labels = labels.squeeze(1).to(device)  # (batch_size)
